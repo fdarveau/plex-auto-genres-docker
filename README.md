@@ -1,41 +1,18 @@
 # Plex Auto Genres
+This is a third-party docker container to run the plex-auto-genres script (https://github.com/ShaneIsrael/plex-auto-genres) every day at 1AM UTC. 
 
-Plex Auto Genres is a simple script that will add genre collection tags to your media making it much easier to search for genre specific content
+The script adds genre collection tags to your media making it much easier to search for genre specific content. It has been modified to run without any input and log fetch results to a specific folder (that can be mounted) instead of the working directory.
 
-1. [Requirements](#requirements)
-2. [Optimal Setup](#Setup)
-3. [Getting Started](#getting_started)
-4. [Troubleshooting](#troubleshooting)
+[DockerHub](https://hub.docker.com/r/frank2312/plex-auto-genres)
 
-###### Movies example
-![Movie Collections](/images/movies.png)
+- [Plex Auto Genres](#plex-auto-genres)
+  - [Getting started](#getting-started)
+  - [Manual run](#manual-run)
+  - [Troubleshooting](#troubleshooting)
 
-###### Anime example
-![Anime Collections](/images/animes.png)
-
-## Requirements
-1. Python 3
-2. [TMDB Api Key](https://developers.themoviedb.org/3/getting-started/introduction) (Only required for non-anime libraries)
-
-## Optimal Setup
-
-1. Anime / Anime Movies are in their own library on your plex server. **_(Anime and Anime Movies can share the same library)_**
-2. Standard TV Shows are in their own library on your plex server.
-3. Standard Movies are in their own library on your plex server.
-4. Proper titles for your media, this makes it easier to find the media. (see https://support.plex.tv/articles/naming-and-organizing-your-tv-show-files/)
-
-For this to work well your plex library should be sorted. Meaning standard and non-standard media should not be in the same Plex library. Anime is an example of non-standard media.
-
-If your anime shows and standard tv shows are in the same library, you can still use this script just choose (**standard**) as the type. However, doing this could cause incorrect genres added to some or all of your anime media entries.
-
-###### Here is an example of my plex library setup
-![Plex Library Example](/images/example-library-setup.png)
-
-## Getting Started <a name="getting_started"></a>
-1. Read the **Optimal Setup** section above
-2. Install the python dependencies listed in `requirements.txt`, if you have pip you can simply do `pip install -r requirements.txt`
-3. Rename the `.env.example` file to `.env`
-4. Edit the `.env` file and set your plex username, password, and server name. If you are generating collections for standard media (non anime) you will need to also obtain an [TMDB Api Key](https://developers.themoviedb.org/3/getting-started/introduction) (for movies and tv shows) 
+## Getting started
+- Create the container. You can use the `docker-compose.yml` file as a template.
+  - There are 2 ways to connect to your server : using your credentials and server name, or using an existing token and your server's URL.
     |Variable|Authentication method|Value|
     |---|---|---|
     |PLEX_USERNAME|Username and password|Your Plex Username|
@@ -44,33 +21,25 @@ If your anime shows and standard tv shows are in the same library, you can still
     |PLEX_BASE_URL|Token|Your Plex Server base URL|
     |PLEX_TOKEN|Token|Your Plex Token|
     |PLEX_COLLECTION_PREFIX||(Optional) Prefix for the created Plex collections. For example, with a value of "\*", a collection named "Adventure", the name would instead be "*Adventure".<br><br>Default value : ""|
-    |TMDB_API_KEY||Your TMDB api key (not required for anime library tagging)|
+    |TMDB_API_KEY||Your the movie database api key (not required for anime library tagging)|
+- Volume mount the `/config` folder that will contain the libraries for which you want the collections generated.
+- (Optional) Volume mount the `/logs` folder that will contain the log files. The files can still be accessed by connecting to the container if it is not mounted.
+  - Titles in the log files will not be re-processed. You must delete the log files to start a fresh run.
+- Run the container once to generate the initial config file.
+- Edit the generated config file (`libraries.txt`). 
+    - Supported types :
+        - standard-tv
+        - standard-movie
+        - anime
+- Run manully (see [Manual run](#Manuel-run)) to check if it works or wait for the next automatic run.
 
-You are now ready to run the script
+## Manual run
+You can start a manual run by connecting to the container's terminal and running the command
 ```
-usage: plex-auto-genres.py [-h] [--library LIBRARY] [--type {anime,standard}]
-
-Adds genre tags (collections) to your Plex media.
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --library LIBRARY     The exact name of the Plex library to generate genre collections for.
-  --type {anime,standard-movie,standard-tv}
-                        The type of media contained in the library
-
-example: 
-python plex-auto-genres.py --library "Anime Movies" --type anime
-python plex-auto-genres.py --library "Anime Shows" --type anime
-python plex-auto-genres.py --library Movies --type standard-movie
-python plex-auto-genres.py --library "TV Shows" --type standard-tv
+/generate-collections.sh
 ```
-
-![Example Usage](/images/example-usage.gif)
 
 ## Troubleshooting
 1. If you are not seeing any new collections close your plex client and re-open it.
 2. Delete the generated `plex-*-finished.txt`  and `plex-*-failures.txt` files if you want the script to generate collections from the beginning. You may want to do this if you delete your collections and need them re-created.
 3. Having the release year in the title of a tv show or movie can cause the lookup to fail in some instances. For example `Battlestar Galactica (2003)` will fail, but `Battlestar Galactica` will not.
-
-## Docker Usage
-If you would like to run this via a docker container somebody has made that possible. [Follow their instructions here](https://github.com/fdarveau/plex-auto-genres-docker)

@@ -1,0 +1,17 @@
+version: '3.1'
+services:
+  plex-auto-genres:
+    container_name: plex-auto-genres
+    image: frank2312/plex-auto-genres:latest
+    restart: unless-stopped
+    volumes:
+      - /config:/config
+      - /logs:/logs
+    environment:
+      - PLEX_USERNAME=xxx
+      - PLEX_PASSWORD=xxx
+      - PLEX_SERVER_NAME=xxx
+      - PLEX_BASE_URL=xxx
+      - PLEX_TOKEN=xxx
+      - PLEX_COLLECTION_PREFIX = ""
+      - TMDB_API_KEY=xxx

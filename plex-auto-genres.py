@@ -9,10 +9,8 @@ import datetime
 from tmdbv3api import TMDb, Movie, TV
 from jikanpy import Jikan
 from plexapi.myplex import MyPlexAccount, PlexServer
-from dotenv import load_dotenv
 
 jikan = Jikan()
-load_dotenv()
 tmdb = TMDb()
 movie = Movie()
 tv = TV()
@@ -60,23 +58,20 @@ args = parser.parse_args()
 
 DRY_RUN = args.dry
 
-if (not os.path.isfile('.env')):
-    print(bcolors.FAIL + 'No .env file detected. Please locate the .env.example file and copy the contents into a new file named .env placed next to this script.' + bcolors.ENDC)
-    sys.exit(1)
 if (not PLEX_USERNAME and not PLEX_TOKEN):
-    print(bcolors.FAIL + 'PLEX_USERNAME is missing or not set. Please verify your .env file.' + bcolors.ENDC)
+    print(bcolors.FAIL + 'PLEX_USERNAME is missing or not set. Please verify your container configuration.' + bcolors.ENDC)
     sys.exit(1)
 if (not PLEX_PASSWORD and not PLEX_TOKEN):
-    print(bcolors.FAIL + 'PLEX_PASSWORD is missing or not set. Please verify your .env file.' + bcolors.ENDC)
+    print(bcolors.FAIL + 'PLEX_PASSWORD is missing or not set. Please verify your container configuration.' + bcolors.ENDC)
     sys.exit(1)
-if ((not PLEX_SERVER_NAME and not PLEX_TOKEN):
-    print(bcolors.FAIL + 'PLEX_SERVER_NAME is missing or not set. Please verify your .env file.' + bcolors.ENDC)
+if (not PLEX_SERVER_NAME and not PLEX_TOKEN):
+    print(bcolors.FAIL + 'PLEX_SERVER_NAME is missing or not set. Please verify your container configuration.' + bcolors.ENDC)
     sys.exit(1)
 if (PLEX_TOKEN and not PLEX_BASE_URL):
-    print(bcolors.FAIL + 'Plex Token Auth requires PLEX_BASE_URL to be set. Please verify your .env file.' + bcolors.ENDC)
+    print(bcolors.FAIL + 'Plex Token Auth requires PLEX_BASE_URL to be set. Please verify your container configuration.' + bcolors.ENDC)
     sys.exit(1)
 if ((args.type[0] == 'standard-movie' or args.type[0] == 'standard-tv') and not TMDB_API_KEY):
-    print(bcolors.FAIL + 'TMDB_API_KEY must be set for non-anime. Please verify your .env file.' + bcolors.ENDC)
+    print(bcolors.FAIL + 'TMDB_API_KEY must be set for non-anime. Please verify your container configuration.' + bcolors.ENDC)
     sys.exit(1)
 
 def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
@@ -105,10 +100,8 @@ def connect_to_plex():
 
 
 def get_sleep_time(type):
-    if (type == 'standard-movie'):
-        return 1 # tmdb doesn't have a rate limit, but we sleep for 0.5 anyways
-    elif (type == 'standard-tv'):
-        return 1 # tmdb
+    if ("standard" in type):
+        return 1 # tmdb doesn't have an explicit rate limit, but we run into issues without the sleep
     else:
         return 8 #Jikan fetch requires 2 request with a 4 second sleep on each request
 
@@ -144,7 +137,7 @@ def fetch_standard(title, type):
             genre_list.extend(genre['name'].split(' & '))
         return genre_list
     except Exception as e:
-        print('\n\n{}, when searching for entry: {}, of type {}\nThis entry has been added to the failures.txt once the issue is corrected in your library remove the entry from failures.txt and try again.'.format(str(e), title, type))
+        print(f'\n\n{str(e)}, when searching for entry: {title}, of type {type}\nThis entry has been added to the failures.txt once the issue is corrected in your library remove the entry from failures.txt and try again.')
         return []
 
 def generate():
@@ -152,11 +145,11 @@ def generate():
     finished_media = []
     failed_media = []
     if (not DRY_RUN):
-        if (os.path.isfile('plex-'+args.type[0]+'-finished.txt')):
-            with open('plex-'+args.type[0]+'-finished.txt') as save_data:
+        if (os.path.isfile('plex-'+args.library[0]+'-'+args.type[0]+'-finished.txt')):
+            with open('plex-'+args.library[0]+'-'+args.type[0]+'-finished.txt') as save_data:
                 finished_media = json.load(save_data)
-        if (os.path.isfile('plex-'+args.type[0]+'-failures.txt')):
-            with open('plex-'+args.type[0]+'-failures.txt') as save_data:
+        if (os.path.isfile('plex-'+args.library[0]+'-'+args.type[0]+'-failures.txt')):
+            with open('plex-'+args.library[0]+'-'+args.type[0]+'-failures.txt') as save_data:
                 failed_media = json.load(save_data)
     try:
         medias = plex.library.section(args.library[0]).all()
@@ -170,7 +163,7 @@ def generate():
         eta = ((unfinished_count * get_sleep_time(args.type[0])) / 60) * 2
         time_now = datetime.datetime.now()
         time_done = time_now + datetime.timedelta(minutes=eta)
-        print("Found {} media entries under {} ({}/{} completed), estimated time to completion ~{} minutes ({})...\n".format(total_count, args.library[0], finished_count, total_count, math.ceil(eta), time_done.strftime("%I:%M %p")))
+        print(f"Found {total_count} media entries under {args.library[0]} ({finished_count}/{total_count} completed), estimated time to completion ~{math.ceil(eta)} minutes ({time_done.strftime('%I:%M %p')})...\n")
 
         working_index = 0
         for m in medias:
@@ -204,30 +197,17 @@ def generate():
 
     if (not DRY_RUN):
         if (len(finished_media) > 0):
-            with open('plex-'+args.type[0]+'-finished.txt', 'w') as filehandle:
-                json.dump(finished_media, filehandle)
+            with open('plex-'+args.library[0]+'-'+args.type[0]+'-finished.txt', 'w') as filehandle:
+                json.dump(finished_media, filehandle, indent=4)
         if (len(failed_media) > 0):
-            with open('plex-'+args.type[0]+'-failures.txt', 'w') as filehandle:
-                json.dump(failed_media, filehandle)
+            with open('plex-'+args.library[0]+'-'+args.type[0]+'-failures.txt', 'w') as filehandle:
+                json.dump(failed_media, filehandle, indent=4)
     
     sys.exit(0)
-
-
-def confirm_run():
-    acceptable_responses = ['y', 'n', 'Y', 'N']
-    response = input(bcolors.WARNING+"Continue? y/n..."+bcolors.ENDC)
-    if (response in acceptable_responses):
-        if (response == 'y' or response == 'Y'):
-            generate()
-        else:
-            print("exiting...")
-        return
-    else:
-        confirm_run()
 
 if __name__ == '__main__':
     CONFIRMATION = "\nYou are about to create ["+bcolors.WARNING+args.type[0]+bcolors.ENDC+"] genre collection tags for the library ["+bcolors.WARNING+args.library[0]+bcolors.ENDC+"] on your server ["+bcolors.WARNING+PLEX_SERVER_NAME+bcolors.ENDC+"]."
     if (len(PLEX_COLLECTION_PREFIX) > 0):
         CONFIRMATION += "With prefix ["+bcolors.WARNING+PLEX_COLLECTION_PREFIX+bcolors.ENDC+"]."
     print(CONFIRMATION)
-    confirm_run()
+    generate()
