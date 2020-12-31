@@ -145,11 +145,11 @@ def generate():
     finished_media = []
     failed_media = []
     if (not DRY_RUN):
-        if (os.path.isfile('plex-'+args.library[0]+'-'+args.type[0]+'-finished.txt')):
-            with open('plex-'+args.library[0]+'-'+args.type[0]+'-finished.txt') as save_data:
+        if (os.path.isfile('/logs/plex-'+args.library[0]+'-'+args.type[0]+'-finished.txt')):
+            with open('/logs/plex-'+args.library[0]+'-'+args.type[0]+'-finished.txt') as save_data:
                 finished_media = json.load(save_data)
-        if (os.path.isfile('plex-'+args.library[0]+'-'+args.type[0]+'-failures.txt')):
-            with open('plex-'+args.library[0]+'-'+args.type[0]+'-failures.txt') as save_data:
+        if (os.path.isfile('/logs/plex-'+args.library[0]+'-'+args.type[0]+'-failures.txt')):
+            with open('/logs/plex-'+args.library[0]+'-'+args.type[0]+'-failures.txt') as save_data:
                 failed_media = json.load(save_data)
     try:
         medias = plex.library.section(args.library[0]).all()
@@ -197,10 +197,10 @@ def generate():
 
     if (not DRY_RUN):
         if (len(finished_media) > 0):
-            with open('plex-'+args.library[0]+'-'+args.type[0]+'-finished.txt', 'w') as filehandle:
+            with open('/logs/plex-'+args.library[0]+'-'+args.type[0]+'-finished.txt', 'w') as filehandle:
                 json.dump(finished_media, filehandle, indent=4)
         if (len(failed_media) > 0):
-            with open('plex-'+args.library[0]+'-'+args.type[0]+'-failures.txt', 'w') as filehandle:
+            with open('/logs/plex-'+args.library[0]+'-'+args.type[0]+'-failures.txt', 'w') as filehandle:
                 json.dump(failed_media, filehandle, indent=4)
     
     sys.exit(0)
