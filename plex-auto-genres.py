@@ -145,11 +145,11 @@ def generate():
     finished_media = []
     failed_media = []
     if (not DRY_RUN):
-        if (os.path.isfile('/logs/plex-'+args.library[0]+'-'+args.type[0]+'-finished.txt')):
-            with open('/logs/plex-'+args.library[0]+'-'+args.type[0]+'-finished.txt') as save_data:
+        if (os.path.isfile(f'/logs/plex-{args.library[0]}-{args.type[0]}-finished.txt')):
+            with open(f'/logs/plex-{args.library[0]}-{args.type[0]}-finished.txt') as save_data:
                 finished_media = json.load(save_data)
-        if (os.path.isfile('/logs/plex-'+args.library[0]+'-'+args.type[0]+'-failures.txt')):
-            with open('/logs/plex-'+args.library[0]+'-'+args.type[0]+'-failures.txt') as save_data:
+        if (os.path.isfile(f'/logs/plex-{args.library[0]}-{args.type[0]}-failures.txt')):
+            with open(f'/logs/plex-{args.library[0]}-{args.type[0]}-failures.txt') as save_data:
                 failed_media = json.load(save_data)
     try:
         medias = plex.library.section(args.library[0]).all()
@@ -187,7 +187,7 @@ def generate():
 
             finished_media.append(m.title)
             printProgressBar(working_index, total_count, prefix = 'Progress:', suffix = 'Complete', length = 50)
-        print('\n'+bcolors.FAIL+'Failed to get genre information for '+str(len(failed_media))+' entries. '+bcolors.ENDC+'See '+'plex-'+args.type[0]+'-failures.txt')
+        print(f'\n{bcolors.FAIL}Failed to get genre information for {str(len(failed_media))} entries. {bcolors.ENDC}See plex-{args.library[0]}-{args.type[0]}-failures.txt')
 
     except KeyboardInterrupt:
         print('\n\nOperation interupted, progress has been saved.')
@@ -197,10 +197,10 @@ def generate():
 
     if (not DRY_RUN):
         if (len(finished_media) > 0):
-            with open('/logs/plex-'+args.library[0]+'-'+args.type[0]+'-finished.txt', 'w') as filehandle:
+            with open(f'/logs/plex-{args.library[0]}-{args.type[0]}-finished.txt', 'w') as filehandle:
                 json.dump(finished_media, filehandle, indent=4)
         if (len(failed_media) > 0):
-            with open('/logs/plex-'+args.library[0]+'-'+args.type[0]+'-failures.txt', 'w') as filehandle:
+            with open(f'/logs/plex-{args.library[0]}-{args.type[0]}-failures.txt', 'w') as filehandle:
                 json.dump(failed_media, filehandle, indent=4)
     
     sys.exit(0)
