@@ -218,8 +218,8 @@ def upload_collection_art():
     for c in collections:
         # remove prefix characters
         title = c.title.lower()
-        if (title[0] == PLEX_COLLECTION_PREFIX):
-            title = title[1:]
+        if (len(PLEX_COLLECTION_PREFIX) > 0):
+            title = title[len(PLEX_COLLECTION_PREFIX):]
         # replace spaces with dashes
         title = title.replace(' ', '-')
         poster_path = f'/posters/{args.type[0]}/{title}.png'

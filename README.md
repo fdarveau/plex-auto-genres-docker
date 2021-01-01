@@ -23,6 +23,7 @@ The script adds genre collection tags to your media making it much easier to sea
     |PLEX_COLLECTION_PREFIX||(Optional) Prefix for the created Plex collections. For example, with a value of "\*", a collection named "Adventure", the name would instead be "*Adventure".<br><br>Default value : ""|
     |TMDB_API_KEY||Your the movie database api key (not required for anime library tagging)|
 - Volume mount the `/config` folder that will contain the libraries for which you want the collections generated.
+- (Optional) Volume mount the `/posters` folder that contains the posters for the generated collections. See [ShaneIsrael's repository for details about posters](https://github.com/ShaneIsrael/plex-auto-genres/tree/master/sample_posters).
 - (Optional) Volume mount the `/logs` folder that will contain the log files. The files can still be accessed by connecting to the container if it is not mounted.
   - Titles in the log files will not be re-processed. You must delete the log files to start a fresh run.
 - Run the container once to generate the initial config file.
