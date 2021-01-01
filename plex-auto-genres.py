@@ -47,6 +47,7 @@ parser.add_argument('--library', action='store', dest='library', nargs=1,
                     help='The exact name of the Plex library to generate genre collections for.')
 parser.add_argument('--type', dest='type', action='store', choices=('anime', 'standard-movie', 'standard-tv'), nargs=1,
                     help='The type of media contained in the library')
+parser.add_argument('--set-posters', help='uploads posters located in posters/<type> of matching collections. Supports (.PNG)', action='store_true')
 parser.add_argument('--dry', help='Do not modify plex collections (debugging feature)', action='store_true')
 
 
@@ -57,6 +58,7 @@ if len(sys.argv)==1:
 args = parser.parse_args()
 
 DRY_RUN = args.dry
+SET_POSTERS = args.set_posters
 
 if (not PLEX_USERNAME and not PLEX_TOKEN):
     print(bcolors.FAIL + 'PLEX_USERNAME is missing or not set. Please verify your container configuration.' + bcolors.ENDC)
@@ -205,9 +207,38 @@ def generate():
     
     sys.exit(0)
 
-if __name__ == '__main__':
-    CONFIRMATION = "\nYou are about to create ["+bcolors.WARNING+args.type[0]+bcolors.ENDC+"] genre collection tags for the library ["+bcolors.WARNING+args.library[0]+bcolors.ENDC+"] on your server ["+bcolors.WARNING+(PLEX_SERVER_NAME or PLEX_BASE_URL)+bcolors.ENDC+"]."
-    if (len(PLEX_COLLECTION_PREFIX) > 0):
-        CONFIRMATION += "With prefix ["+bcolors.WARNING+PLEX_COLLECTION_PREFIX+bcolors.ENDC+"]."
-    print(CONFIRMATION)
-    generate()
+def upload_collection_art():
+    #collection_name, libtype='collection'
+    if (not os.path.isdir(f'/posters/{args.type[0]}')):
+        print(f'{bcolors.FAIL}Could not find poster art directory. Expected location /posters/{args.type[0]}{bcolors.ENDC}')
+        sys.exit(1)
+    plex = connect_to_plex()
+    collections = plex.library.section(args.library[0]).collection()
+    print('\nUploading collection artwork...')
+    for c in collections:
+        # remove prefix characters
+        title = c.title.lower()
+        if (title[0] == PLEX_COLLECTION_PREFIX):
+            title = title[1:]
+        # replace spaces with dashes
+        title = title.replace(' ', '-')
+        poster_path = f'/posters/{args.type[0]}/{title}.png'
+        if (os.path.isfile(poster_path)):
+            print(f'Uploading {title}...', end='\r')
+            c.uploadPoster(filepath=poster_path)
+            print(f'Uploading {title}... {bcolors.OKGREEN}done!{bcolors.ENDC}', end='\r')
+            print()
+        else:
+            print (f'No poster found for collection {bcolors.WARNING}{title}{bcolors.ENDC}, expected {bcolors.WARNING}/posters/{args.type[0]}/{title}.png{bcolors.ENDC}')
+
+if __name__ == '__main__':    
+    if (not SET_POSTERS):
+        CONFIRMATION = "\nYou are about to create ["+bcolors.WARNING+args.type[0]+bcolors.ENDC+"] genre collection tags for the library ["+bcolors.WARNING+args.library[0]+bcolors.ENDC+"] on your server ["+bcolors.WARNING+(PLEX_SERVER_NAME or PLEX_BASE_URL)+bcolors.ENDC+"]."
+        if (len(PLEX_COLLECTION_PREFIX) > 0):
+            CONFIRMATION += "With prefix ["+bcolors.WARNING+PLEX_COLLECTION_PREFIX+bcolors.ENDC+"]."
+        print(CONFIRMATION)
+        generate()
+
+    if (SET_POSTERS):
+        print(f'You are about to update your {bcolors.WARNING}[{args.library[0]}]{bcolors.ENDC} collection posters to any matching image titles located at {bcolors.WARNING}posters/{args.type[0]}/{bcolors.ENDC}')
+        upload_collection_art()
